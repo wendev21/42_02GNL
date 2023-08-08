@@ -3,91 +3,75 @@
 /*                                                        :::      ::::::::   */
 /*   get_next_line.c                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: wecorzo- <wecorzo-@student.42madrid>       +#+  +:+       +#+        */
+/*   By: wecorzo- <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2023/07/10 20:56:49 by wecorzo-          #+#    #+#             */
-/*   Updated: 2023/07/17 18:38:45 by wecorzo-         ###   ########.fr       */
+/*   Created: 2023/03/23 22:59:05 by wecorzo-          #+#    #+#             */
+/*   Updated: 2023/08/05 22:38:07 by wecorzo-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
+
 #include "get_next_line.h"
+#include <unistd.h>
 
-char    *join_line(char *line_temp, char *buffer)
+char	*read_stash(char *line_temp, int fd)
 {
-    char    *joined;
+	ssize_t	b_read;
+	char	*buffer;
+	char	*temp;
 
-    joined = ft_strjoin(line_temp, buffer);
-    free(line_temp);
-    return (joined);
+	temp = NULL;
+	buffer = malloc(sizeof(char) * (BUFFER_SIZE + 1));
+	if (!buffer)
+		return (free(buffer), NULL);
+	b_read = read(fd, buffer, BUFFER_SIZE);
+	while (b_read > 0)
+	{
+		buffer[b_read] = '\0';
+		temp = line_temp;
+		line_temp = ft_strjoin(line_temp, buffer);
+		free(temp);
+		if (ft_strchr(line_temp, '\n') != -1)
+			break ;
+		b_read = read(fd, buffer, BUFFER_SIZE);
+	}
+	free(buffer);
+	return (line_temp);
 }
 
-char	*return_line(char *line_temp)
+char	*return_line(char **line_temp)
 {
-    int     i;
-    char    *line;
-    i = 0;
-    while (line_temp && line_temp[i] != '\n')
-    {
-        i++;
-        if (line_temp[i] == '\0')
-            return (line_temp);
-    }
-    line = ft_substr(line_temp, 0, i + 1);
-    free (line_temp);
-    return (line);
+	int		i;
+	char	*line;
+	char	*aux;
+
+	line = NULL;
+	aux = NULL;
+	if ((*line_temp) == NULL)
+		return (NULL);
+	i = 0;
+	while ((*line_temp)[i] != '\0' && (*line_temp)[i] != '\n')
+		i++;
+	if ((*line_temp)[i] == '\n')
+		line = ft_substr((*line_temp), 0, i + 1);
+	else
+		line = ft_substr(*line_temp, 0, i);
+	if ((ft_strlen(*line_temp) - i) > 0 && (ft_strlen(*line_temp) - i - 1) > 0)
+		aux = ft_substr(*line_temp, i + 1, (ft_strlen(*line_temp) - i - 1));
+	free (*line_temp);
+	*line_temp = aux;
+	return (line);
 }
 
 char	*get_next_line(int fd)
 {
-    char        *buffer;
-    char        *line;
-    static char *line_temp;
-    int         i;
-    int         j;
-    ssize_t     b_read;
+	static char	*line_temp;
+	char		*linea;
 
-   if (!(buffer = malloc(sizeof(char) * BUFFER_SIZE + 1)))
-       return (NULL);
-   if ((b_read = read(fd, buffer, BUFFER_SIZE)) <= 0)
-       return (NULL);
-   if (!line_temp)
-   {
-       line = return_line(buffer);
-       line_temp = ft_substr(buffer, ft_strlen(line), b_read);
-   }else
-   {
-       line_temp = join_line(line_temp, buffer);
-       line = return_line(line_temp);
-       if((line_temp = ft_substr(line_temp, ft_strlen(line), b_read)) == 0)
-           free(line_temp);
-   }
-    return (line);
+	linea = NULL;
+	if (fd < 0 || BUFFER_SIZE <= 0 || fd > FOPEN_MAX)
+		return (NULL);
+	if (ft_strchr(line_temp, '\n'))
+		line_temp = read_stash(line_temp, fd);
+	linea = return_line(&line_temp);
+	return (linea);
 }
-/*
-int main(void)
-{
-    int fd;
-
-    fd = open("file.txt", O_RDONLY);
-    printf("%s", get_next_line(fd));
-}
-
-int	main(void)
-{
-	char	*line;
-	int		fd;
-
-	fd = open("file.txt", O_RDONLY);
-	if (fd < 0)
-	{
-		perror("Error opening file");
-		return (1);
-	}
-	while ((line = get_next_line(fd)) != NULL)
-	{
-		printf("%s\n", line);
-		free(line);
-	}
-	close(fd);
-	return (0);
-}
-*/
