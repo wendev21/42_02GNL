@@ -6,7 +6,7 @@
 /*   By: wecorzo- <wecorzo-@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/23 22:59:05 by wecorzo-          #+#    #+#             */
-/*   Updated: 2023/08/08 16:46:40 by wecorzo-         ###   ########.fr       */
+/*   Updated: 2023/08/08 16:51:12 by wecorzo-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -85,17 +85,17 @@ char	*return_line(char **line_temp)
 char	*get_next_line(int fd)
 {
 	char		*linea;
-	static char	*line_temp;
+	static char	*line_temp[1024];
 
 	linea = NULL;
 	if (fd < 0 || BUFFER_SIZE <= 0 || (read(fd, 0, 0) < 0) || fd > FOPEN_MAX)
 	{
-		if (line_temp)
-			(free(line_temp), line_temp = NULL);
+		if (line_temp[fd])
+			(free(line_temp[fd]), line_temp[fd] = NULL);
 		return (NULL);
 	}
-	if (ft_strchr(line_temp, '\n'))
-		line_temp = read_stash(line_temp, fd);
-	linea = return_line(&line_temp);
+	if (ft_strchr(line_temp[fd], '\n'))
+		line_temp[fd] = read_stash(line_temp[fd], fd);
+	linea = return_line(&line_temp[fd]);
 	return (linea);
 }
